@@ -1,0 +1,17 @@
+{
+    "name": "porthou/imguploadur",
+    "bin": ["bin/imguploadur"],
+    "autoload": {
+        "psr-4": { "Imguploadur\\": "src/" }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "~4"
+    },
+    "license": "BSD",
+    "authors": [
+        {
+            "name": "Anthony Porthouse",
+            "email": "anthony@porthou.se"
+        }
+    ]
+}

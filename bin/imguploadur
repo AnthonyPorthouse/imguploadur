@@ -1,0 +1,12 @@
+#!/usr/bin/env php
+<?php
+
+require_once __DIR__.'/../vendor/autoload.php';
+
+use Imguploadur\Imguploadur;
+
+$imguploadur = new Imguploadur();
+
+array_shift($argv);
+
+$imguploadur->upload(...$argv);
