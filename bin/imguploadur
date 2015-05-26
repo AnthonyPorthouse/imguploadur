@@ -10,8 +10,8 @@ $imguploadur = new Imguploadur();
 array_shift($argv);
 
 if (count($argv) == 0 || $argv[0] == "help") {
-  echo "Usage: " . basename(__FILE__) . " filename\n";
-  exit(1);
+    echo "Usage: " . basename(__FILE__) . " filename\n";
+    exit(1);
 }
 
 $imguploadur->upload(...$argv);
