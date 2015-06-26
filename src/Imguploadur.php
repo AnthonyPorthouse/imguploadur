@@ -3,6 +3,7 @@
 namespace Imguploadur;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Post\PostFile;
 
 class Imguploadur
@@ -35,64 +36,75 @@ class Imguploadur
 
     private function authorize()
     {
-
         // If Auth file doesnt exist, authorize the user to get an access_token, otherwise get an updated access_token
         if (!is_file($this->authFile)) {
             echo "Go to the following URL: https://api.imgur.com/oauth2/authorize?client_id={$this->clientId}&response_type=pin\n";
             echo "Enter Pin: ";
             $pin = trim(fgets(STDIN));
 
-            $request = $this->client->createRequest('POST', $this->authorizeUrl);
-            $postBody = $request->getBody();
-            $postBody->setField('client_id', $this->clientId)
-                     ->setField('client_secret', $this->clientSecret)
-                     ->setField('grant_type', 'pin')
-                     ->setField('pin', $pin);
-
-            $response = $this->client->send($request);
+            $response = $this->client->post($this->authorizeUrl, [
+                'json' => [
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'grant_type' => 'pin',
+                    'pin' => $pin
+                ]
+            ]);
 
             file_put_contents(__DIR__.'/../auth.json', $response->getBody());
             $this->auth = json_decode(file_get_contents($this->authFile));
         } else {
-            $this->auth = json_decode(file_get_contents($this->authFile));
 
-            $request = $this->client->createRequest('POST', $this->authorizeUrl);
-            $postBody = $request->getBody();
-            $postBody->setField('refresh_token', $this->auth->refresh_token)
-                     ->setField('client_id', $this->clientId)
-                     ->setField('client_secret', $this->clientSecret)
-                     ->setField('grant_type', 'refresh_token');
+            try {
+                $this->auth = json_decode(file_get_contents($this->authFile));
+                $response = $this->client->post($this->authorizeUrl, [
+                    'json' => [
+                        'refresh_token' => $this->auth->refresh_token,
+                        'client_id' => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'grant_type' => 'refresh_token'
+                    ]
+                ]);
 
-            $response = $this->client->send($request);
-            file_put_contents(__DIR__.'/../auth.json', $response->getBody());
-            $this->auth = json_decode(file_get_contents($this->authFile));
+                file_put_contents(__DIR__ . '/../auth.json', $response->getBody());
+                $this->auth = json_decode(file_get_contents($this->authFile));
+            } catch (ClientException $e) {
+                echo $e->getResponse()->getStatusCode() . PHP_EOL;
+                echo $e->getResponse()->getReasonPhrase() . PHP_EOL;
+                echo $e->getRequest()->getBody();
+            }
         }
-
     }
 
     public function upload($image)
     {
         if (!(file_exists($image) && is_readable($image))) {
-            throw new Exception("File does not exist or is not readable");
+            throw new \Exception("File does not exist or is not readable");
         }
 
         $file = fopen($image, 'r');
 
         try {
-            $request = $this->client->createRequest('POST', $this->base . 'image');
+            $response = $this->client->post($this->base . 'image', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->auth->access_token
+                ],
 
-            $request->addHeader('Authorization', 'Bearer ' . $this->auth->access_token);
+                'multipart' => [
+                    [
+                        'name' => 'image',
+                        'contents' => $file
+                    ]
+                ]
+            ]);
 
-            $postBody = $request->getBody();
-            $postBody->setField('type', 'file')
-                     ->addFile(new PostFile('image', $file));
+            $json = json_decode($response->getBody());
 
-            $response = $this->client->send($request);
-            $json = $response->json();
-
-            echo "Image is available at: {$json['data']['link']}\n";
-        } catch (\Exception $e) {
-            echo 'Error: ' . $e->getMessage() . "\n";
+            echo "Image is available at: {$json->data->link}\n";
+        } catch (ClientException $e) {
+            echo $e->getResponse()->getStatusCode() . PHP_EOL;
+            echo $e->getResponse()->getReasonPhrase() . PHP_EOL;
+            echo $e->getRequest()->getBody();
         }
     }
 }

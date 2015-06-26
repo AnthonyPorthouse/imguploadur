@@ -5,7 +5,7 @@
         "psr-4": { "Imguploadur\\": "src/" }
     },
     "require": {
-        "guzzlehttp/guzzle": "~4"
+        "guzzlehttp/guzzle": "~6"
     },
     "license": "BSD",
     "authors": [
