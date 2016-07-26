@@ -7,7 +7,7 @@
     "require": {
         "guzzlehttp/guzzle": "~6"
     },
-    "license": "BSD",
+    "license": "MIT",
     "authors": [
         {
             "name": "Anthony Porthouse",

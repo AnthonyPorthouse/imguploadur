@@ -1,0 +1,12 @@
+{
+    "alias": "imguploadur.phar",
+    "directories": ["src", "vendor"],
+    "files": [
+        "LICENSE.md"
+    ],
+    "git-commit": "git-commit",
+    "git-version": "git-version",
+    "main": "bin/imguploadur",
+    "output": "imguploadur-@git-version@.phar",
+    "stub": true
+}

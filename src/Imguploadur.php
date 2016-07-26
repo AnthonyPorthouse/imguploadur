@@ -27,7 +27,23 @@ class Imguploadur
 
     public function __construct()
     {
-        $this->authFile = __DIR__.'/../auth.json';
+        $baseDir = $_SERVER['HOME'];
+        switch (PHP_OS) {
+            case 'Darwin':
+                $baseDir .= '/Library/Application Support/imguploadur';
+                break;
+
+            case 'Linux':
+                $baseDir .= '/.config/imguploadur';
+            default:
+                break;
+        }
+
+        $this->authFile = $baseDir.'/auth.json';
+        if (!is_dir(dirname($this->authFile))) {
+            mkdir(dirname($this->authFile), 0755, true);
+        }
+
         $this->client = new Client();
 
         $this->authorize();
@@ -35,7 +51,7 @@ class Imguploadur
 
     private function authorize()
     {
-        // If Auth file doesnt exist, authorize the user to get an access_token, otherwise get an updated access_token
+        // If Auth file doesn't exist, authorize the user to get an access_token, otherwise get an updated access_token
         if (!is_file($this->authFile)) {
             echo "Go to the following URL: https://api.imgur.com/oauth2/authorize?client_id={$this->clientId}&response_type=pin\n";
             echo 'Enter Pin: ';
@@ -50,7 +66,7 @@ class Imguploadur
                 ],
             ]);
 
-            file_put_contents(__DIR__.'/../auth.json', $response->getBody());
+            file_put_contents($this->authFile, $response->getBody());
             $this->auth = json_decode(file_get_contents($this->authFile));
         } else {
             try {
@@ -64,7 +80,7 @@ class Imguploadur
                     ],
                 ]);
 
-                file_put_contents(__DIR__.'/../auth.json', $response->getBody());
+                file_put_contents($this->authFile, $response->getBody());
                 $this->auth = json_decode(file_get_contents($this->authFile));
             } catch (ClientException $e) {
                 echo $e->getResponse()->getStatusCode().PHP_EOL;
@@ -102,7 +118,8 @@ class Imguploadur
         } catch (ClientException $e) {
             echo $e->getResponse()->getStatusCode().PHP_EOL;
             echo $e->getResponse()->getReasonPhrase().PHP_EOL;
-            echo $e->getRequest()->getBody();
+            echo $e->getResponse()->getBody().PHP_EOL;
+            echo implode(PHP_EOL, $e->getRequest()->getHeaders());
         }
     }
 }
